@@ -11,6 +11,7 @@ using namespace std;
 
 int main() {
     cout<< "Hello, World!" << endl;
+    cout << "My foo is C++" << endl; //put your 'foo' here
     return 0;
 
 }
