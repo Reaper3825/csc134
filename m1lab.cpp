@@ -7,11 +7,10 @@ purpose: The gem
 */
 #include <iostream>
 
-using namespce std::string;
-
-//global var dec
+using namespce std;
 
 int main() {
-    cout << "hello world" << endl;
-    
+    cout<< "Hello, World!" << endl;
+    return 0;
+
 }
