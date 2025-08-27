@@ -13,11 +13,12 @@ using namespace std;
 
 
 int main() {
-    string item_name = fast;
+    string item_name = gym;
     cout<< "Hello, World!" << endl;
     cout << "My foo is C++" << endl; //put your 'foo' here
+  cout << "Welcome to the " << item_name << "store" endl; //unreachable code
+
     return 0;
 
-    cout << "Welcome to the " << item_name << "store" endl; //unreachable code
-
+  
 }
