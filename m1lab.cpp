@@ -13,7 +13,7 @@ using namespace std;
 
 
 int main() {
-    string item_name = gym;
+    string item_name = "gem";
     cout<< "Hello, World!" << endl;
     cout << "My foo is C++" << endl; //put your 'foo' here
   cout << "Welcome to the " << item_name << "store" endl; //unreachable code
