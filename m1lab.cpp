@@ -7,7 +7,6 @@ First program.
 */
 // magic words
 #include <iostream>
-#include <string>
 using namespace std;
 
 //GLobal Var declarations
