@@ -1,0 +1,542 @@
+:: StoryTitle
+csc134dnd
+
+
+:: StoryData
+{
+  "ifid": "E3C2DA31-05B2-4E2D-AB0A-31E92F196B8F",
+  "format": "SugarCube",
+  "format-version": "2.37.3",
+  "start": "StoryInit",
+  "zoom": 1
+}
+
+
+:: Attack {"position":"1000,525","size":"100,100"}
+\:: Attack
+<<set _scale = Math.floor(($attack + $defense) / 4)>>
+<<set $enemyHealth -= Math.max(1, $attack - _scale)>>
+You hit the <<print $enemyName>>! Enemy health: <<print $enemyHealth>><br>
+
+<<if $enemyHealth <= 0>>
+  You defeated the <<print $enemyName>>!<br>
+  <<set $attack += 1>>
+  Your attack increases to <<print $attack>>!<br>
+  <<set $potion += 1>>
+  You find a potion. You now have <<print $potion>> potion(s).<br>
+
+  <<link "Continue">><<goto "ForestEncounter2">><</link>>
+<<else>>
+  <<set $health -= Math.max(1, $enemyAttack - $defense)>>
+  The <<print $enemyName>> hits you! Your health: <<print $health>><br>
+
+  <<if $health <= 7 and $potion > 0>>
+    You have a potion. Use it?<br>
+    <<link "Yes">><<set $health += 10>><<set $potion -= 1>><<goto "Combat">><</link>>
+    <<link "No">><<goto "Combat">><</link>>
+  <<else>>
+    <<link "Continue Fight">><<goto "Combat">><</link>>
+  <</if>>
+<</if>>
+
+<<if $health <= 0>>
+  <<goto "GameOver">>
+<</if>>
+
+
+
+:: Combat {"position":"1000,775","size":"100,100"}
+\:: Combat
+<<if $enemyName is undefined>>
+    <<set $enemyName = "Enemy">>
+<</if>>
+
+<<set _baseHealth = 10>>
+<<set _baseAttack = 5>>
+<<set _scale = Math.floor(($attack + $defense) / 4)>>
+<<set $enemyHealth = _baseHealth + _scale * 2>>
+<<set $enemyAttack = _baseAttack + _scale>>
+
+You are facing a <<print $enemyName>>!<br>
+Your Health: <<print $health>> | Enemy Health: <<print $enemyHealth>><br><br>
+
+Choose your action:<br>
+1. Attack<br>
+2. Use Potion (<<print $potion>> left)<br>
+3. Attempt to Retreat<br><br>
+
+<<textbox "$combatChoice">><<replace "#combatResult">><<run playCombat($combatChoice)>><</replace>>
+
+<div id="combatResult"></div>
+
+<<script>>
+function playCombat(choice) {
+    let enemyHealth = State.variables.enemyHealth;
+    let enemyAttack = State.variables.enemyAttack;
+    let health = State.variables.health;
+    let attack = State.variables.attack;
+    let defense = State.variables.defense;
+    let potion = State.variables.potion;
+    let enemyName = State.variables.enemyName;
+    let hasDog = State.variables.hasDog || false;
+
+    if(choice == "1") {
+        // Player attacks
+        let damageToEnemy = Math.max(1, attack - 2);
+        enemyHealth -= damageToEnemy;
+        State.variables.enemyHealth = enemyHealth;
+        if(enemyHealth <= 0) {
+            State.variables.attack += 1;
+            State.variables.potion += 1;
+            return `You attack the ${enemyName} and deal ${damageToEnemy} damage.<br>You defeated the ${enemyName}! Your attack increases to ${State.variables.attack}. You find a potion. Potions: ${State.variables.potion}.<br><br><<link "Continue">><<goto "ForestAfterBattle">><</link>>`;
+        }
+
+        // Enemy attacks
+        let damageToPlayer = Math.max(1, enemyAttack - defense);
+        if(hasDog) {
+            damageToPlayer = Math.floor(damageToPlayer / 2); // Dog halves enemy damage
+        }
+        health -= damageToPlayer;
+        State.variables.health = health;
+        if(health <= 0) {
+            return `The ${enemyName} hits you for ${damageToPlayer} damage. Your health dropped to 0.<br><br>Game Over.<br><<link "Restart">><<goto "Intro">><</link>>`;
+        }
+        return `You attack the ${enemyName} for ${damageToEnemy} damage.<br>The ${enemyName} hits you for ${damageToPlayer} damage.<br>Your health: ${health}<br>Enemy health: ${enemyHealth}`;
+    } else if(choice == "2") {
+        if(potion > 0) {
+            State.variables.health = Math.min(20, health + 10);
+            State.variables.potion -= 1;
+            return `You drink a potion and restore 10 health.<br>Health: ${State.variables.health}. Potions left: ${State.variables.potion}.`;
+        } else {
+            return `You have no potions left!`;
+        }
+    } else if(choice == "3") {
+        let retreatChance = Math.random();
+        if(retreatChance < 0.5) {
+            State.variables.health -= 5;
+            if(State.variables.health <= 0) {
+                return `You tried to retreat but got hit and died.<br>Game Over.<br><<link "Restart">><<goto "Intro">><</link>>`;
+            }
+            return `You try to retreat but the ${enemyName} hits you! You escape but your health is now ${State.variables.health}.<br><br><<link "Find a healer">><<goto "HealingHut">><</link>>`;
+        } else {
+            return `You successfully retreat to safety.<br><br><<link "Continue">><<goto "ForkInRoad">><</link>>`;
+        }
+    } else {
+        return `Invalid choice. Please select 1, 2, or 3.`;
+    }
+}
+<</script>>
+
+
+
+:: ForestAfterBattle {"position":"1350,1375","size":"100,100"}
+\:: ForestAfterBattle
+Breathing heavily, you survey the area.<br>
+What next?<br>
+<<link "Press onward deeper into the forest">><<goto "ForestEncounter2">><</link>><br>
+<<link "Rest here for a moment">><<goto "ForestRest">><</link>><br>
+<<link "Return to the fork in the road">><<goto "ForkInRoad">><</link>>
+
+
+
+:: ForestEncounter1 {"position":"975,300","size":"100,100"}
+\:: ForestEncounter1
+<<set _scale = Math.floor(($attack + $defense) / 4)>>
+<<set _encounter = random(0,2)>>
+
+<<if _encounter == 0>>
+  <<set $enemyName = "Wolf">>
+  <<set $enemyHealth = 10 + _scale * 2>>
+  <<set $enemyAttack = 4 + _scale>>
+<<elseif _encounter == 1>>
+  <<set $enemyName = "Bandit">>
+  <<set $enemyHealth = 12 + _scale * 2>>
+  <<set $enemyAttack = 6 + _scale>>
+<<else>>
+  <<set $enemyName = "Goblin">>
+  <<set $enemyHealth = 8 + _scale * 2>>
+  <<set $enemyAttack = 5 + _scale>>
+<</if>>
+
+<<goto "Combat">>
+
+
+
+:: ForestEncounter2 {"position":"1100,300","size":"100,100"}
+\:: ForestEncounter2
+You encounter a fearsome creature blocking your path.<br>
+
+<<set _encounter = random(0,2)>>
+
+<<if _encounter == 0>>
+    <<set $enemyName = "Bear">>
+    A massive bear growls and charges!<br>
+<<elseif _encounter == 1>>
+    <<set $enemyName = "Orc">>
+    An orc swings his axe at you!<br>
+<<else>>
+    <<set $enemyName = "Witch">>
+    A witch cackles and hurls a spell!<br>
+<</if>>
+
+<<link "Fight!">><<goto "Combat">><</link>>
+<<link "Try to retreat">><<goto "Retreat">><</link>>
+
+
+
+:: ForestEntry {"position":"1525,1150","size":"100,100"}
+\:: ForestEntry
+The dark forest looms before you.<br>
+You hear rustling noises all around.<br>
+
+Do you:<br>
+<<link "Proceed deeper into the forest">><<goto "ForestEncounter1">><</link>><br>
+<<link "Look for a safe place to rest">><<goto "ForestRest">><</link>><br>
+<<link "Retreat back to the fork">><<goto "ForkInRoad">><</link>>
+
+
+
+:: ForestPath {"position":"1300,625","size":"100,100"}
+ForestPath
+You enter the forest, the shadows deep and mysterious.<br>
+As you walk, you notice two paths ahead:<br><br>
+
+<<link "Take the left path, winding deeper into the woods">><<goto "ForestEncounter1">><</link>><br>
+<<link "Take the right path toward the sound of running water">><<goto "ForestStream">><</link>>
+
+
+
+:: ForestPathAfterSafe {"position":"1175,800","size":"100,100"}
+\:: ForestPathAfterSafe
+You continue your journey through the forest.<br>
+Suddenly, a shadowy figure steps out—it’s an enemy!<br>
+
+<<link "Prepare to fight">><<goto "ForestEncounter1">><</link>>
+
+
+
+:: ForestRest {"position":"1475,475","size":"100,100"}
+\:: ForestRest
+You find a quiet glade to rest.<br>
+
+<<set _encounterChance = random(0,2)>>
+
+<<if _encounterChance == 0>>
+    While resting, a wolf sneaks up on you!<br>
+    <<link "Prepare to fight!">><<set $enemyName="Wolf">><<goto "Combat">><</link>>
+<<else>>
+    You safely rest and regain some health.<br>
+    <<set $health = Math.min(20, $health + 5)>>
+    Health is now <<print $health>>.<br>
+    <<link "Continue deeper into the forest">><<goto "ForestEncounter1">><</link>>
+<</if>>
+
+
+
+:: ForestStream {"position":"1425,625","size":"100,100"}
+ForestStream
+You follow the sound and find a crystal-clear stream. The water looks refreshing.<br>
+Do you:<br><br>
+
+<<link "Drink from the stream to heal">><<set $health = Math.min($health + 5, 20)>><<goto "ForestPathAfterStream">><</link>><br>
+<<link "Ignore it and keep moving">><<goto "ForestPathAfterStream">><</link>>
+
+
+
+:: ForestVictory {"position":"1125,525","size":"100,100"}
+\:: ForestVictory
+You escape the forest victorious!<br>
+Congratulations! You have won all your battles and completed your adventure!<br>
+
+<<link "The End">><<goto "GameOver">><</link>>
+
+
+
+:: ForkinRoad {"position":"1075,1275","size":"100,100"}
+\:: ForkInRoad
+You stand at a fork in the road.<br>
+Where do you want to go?<br><br>
+
+<<link "Go left into the dark forest">><<goto "ForestEntry">><</link>><br>
+<<link "Go right toward the sunny hills">><<goto "SunnyHills">><</link>><br>
+<<link "Sit and rest here for a while">><<goto "RestSpot">><</link>>
+
+
+
+:: GameOver {"position":"1000,900","size":"100,100"}
+\:: GameOver
+Your journey ends here.<br>
+Would you like to try again?<br>
+<<link "Restart the adventure">><<goto "Intro">><</link>>
+
+
+
+:: HealingHut {"position":"1500,900","size":"100,100"}
+\:: HealingHut
+You find a healer’s hut at the edge of the forest.<br>
+The healer tends to your wounds and offers some advice.<br><br>
+<<set $health = Math.min(20, $health + 10)>>
+Your health is restored to <<print $health>>.<br><br>
+
+What do you want to do next?<br>
+<<link "Return to the forest">><<goto "ForestEntry">><</link>><br>
+<<link "Go back to the fork in the road">><<goto "ForkInRoad">><</link>>
+
+
+
+:: Intro {"position":"1100,175","size":"100,100"}
+\:: Intro
+<<set $name = "">>
+<<set $health = 20>>
+<<set $attack = 5>>
+<<set $defense = 3>>
+<<set $potion = 1>>
+<<set $running = true>>
+
+Welcome, adventurer! What is your name?<br>
+<<textbox "$name">><<replace "#next">>Welcome, <<print $name>>! Your journey begins.<br><<link "Continue">><<goto "ForkInRoad">><</link>><</replace>>
+
+<div id="next"></div>
+
+
+
+:: Lake {"position":"1225,300","size":"100,100"}
+\:: Lake
+You discover a beautiful, serene lake surrounded by flowers.<br>
+You feel peaceful and refreshed.<br>
+<<set $defense += 1>>
+Your defense increases to <<print $defense>>!<br>
+
+<<link "Swim in the lake">><<goto "LakeSwim">><</link>><br>
+<<link "Rest on the shore">><<goto "LakeRest">><</link>>
+
+
+
+:: LakeDiscovery {"position":"1725,1150","size":"100,100"}
+\:: LakeDiscovery
+You discover a crystal-clear lake.<br>
+You take a refreshing swim and feel invigorated.<br>
+<<set $defense += 1>>
+Your defense increases to <<print $defense>>!<br><br>
+
+<<link "Return to the fork in the road">><<goto "ForkInRoad">><</link>>
+
+
+
+:: LakeRest {"position":"1275,1250","size":"100,100"}
+LakeRest
+You rest on the shore, feeling at peace.<br>
+After some time, you decide where to go next.<br>
+
+<<link "Return to the sunny hills">><<goto "SunnyHillsAfterVillage">><</link>>
+<<br>>
+<<link "Head back to the fork in the road">><<goto "Intro">><</link>>
+
+
+
+:: LakeSwim {"position":"1150,1000","size":"100,100"}
+\:: LakeSwim
+You take a swim in the cool water.<br>
+You feel invigorated, but suddenly notice something shiny at the bottom.<br>
+
+Do you:<br>
+<<link "Dive down to investigate">><<goto "LakeTreasure">><</link>><br>
+<<link "Get out and rest">><<goto "LakeRest">><</link>>
+
+
+
+:: LakeTreasure {"position":"1400,1125","size":"100,100"}
+\:: LakeTreasure
+You dive deep and grab a small treasure chest.<br>
+Inside, you find a magical shield.<br>
+<<set $defense += 2>>
+Your defense increases to <<print $defense>>!<br>
+
+<<link "Return to shore">><<goto "LakeRest">><</link>>
+
+
+
+:: MysteriousObject {"position":"1300,500","size":"100,100"}
+\:: MysteriousObject
+You pick up the strange amulet. It glows softly.<br>
+You feel your senses sharpen.<br>
+<<set $attack += 2>>
+Your attack increases to <<print $attack>>!<br><br>
+<<link "Return to the fork">><<goto "ForkInRoad">><</link>>
+
+
+
+:: OakTreeRest {"position":"1300,925","size":"100,100"}
+\:: OakTreeRest
+You rest under the oak tree, feeling the warmth of the sun.<br>
+Suddenly, a traveling merchant approaches offering a mysterious item.<br>
+
+Do you:<br>
+<<link "Buy a healing potion (Costs 1 potion)">>
+  <<if $potion > 0>>
+    <<set $potion -= 1>>
+    <<set $health = Math.min($health + 15, 20)>>
+    You buy the potion and heal 15 health. Your health is now <<print $health>>.<br>
+    <<goto "SunnyHills">>
+  <<else>>
+    You don't have enough potions to trade.<br>
+    <<goto "SunnyHills">>
+  <</if>>
+<</link>><br>
+
+<<link "Decline and continue">><<goto "SunnyHills">><</link>>
+
+
+
+:: RestSpot {"position":"1350,300","size":"100,100"}
+\:: RestSpot
+You find a peaceful spot to rest.<br>
+You search around and...<br>
+
+<<set _restEvent = random(0,3)>>
+
+<<if _restEvent == 0>>
+    You find a healing herb! You use it immediately and gain 5 health.<br>
+    <<set $health = Math.min(20, $health + 5)>>
+    Health is now <<print $health>>.<br>
+    <<link "Continue your journey">><<goto "ForkInRoad">><</link>>
+<<elseif _restEvent == 1>>
+    You find a mysterious amulet lying under a tree.<br>
+    <<link "Pick it up">><<goto "MysteriousObject">><</link>>
+<<elseif _restEvent == 2>>
+    A stray dog approaches you and seems friendly.<br>
+    It follows you and will help in your next fight.<br>
+    <<set $hasDog = true>>
+    <<link "Continue your journey">><<goto "ForkInRoad">><</link>>
+<<else>>
+    Nothing unusual happens. You feel a bit more rested.<br>
+    <<set $health = Math.min(20, $health + 2)>>
+    Health is now <<print $health>>.<br>
+    <<link "Continue your journey">><<goto "ForkInRoad">><</link>>
+<</if>>
+
+
+
+:: Retreat {"position":"1000,650","size":"100,100"}
+\:: Retreat
+<<set _retreatSuccess = random(0,1)>>
+
+<<if _retreatSuccess == 1>>
+    You successfully retreat to safety, but you're winded.<br>
+    <<set $health = Math.max(1, $health - 3)>>
+    Health is now <<print $health>>.<br><br>
+    <<link "Seek a healer">><<goto "HealingHut">><</link>>
+<<else>>
+    The <<print $enemyName>> strikes as you turn!<br>
+    <<set $health = $health - 5>>
+    Health drops to <<print $health>>.<br>
+    <<if $health <= 0>>
+        You collapse from your wounds.<br>
+        Game Over.<br>
+        <<link "Restart">><<goto "Intro">><</link>>
+    <<else>>
+        <<link "Run to the healer's hut">><<goto "HealingHut">><</link>>
+    <</if>>
+<</if>>
+
+
+
+:: SafePath {"position":"1300,750","size":"100,100"}
+SafePath
+You carefully avoid the danger and find a safe clearing.<br>
+In the clearing, you spot some berries on a bush.<br>
+
+<<link "Eat the berries (Risky)">><
+  <<set _heal = random(1,8)>>
+  <<if _heal > 5>>
+    <<set $health = Math.min($health + _heal, 20)>>
+    The berries were delicious and healed you for <<print _heal>> points! Your health is now <<print $health>>.<br>
+    <<goto "ForestPathAfterSafe">>
+  <<else>>
+    You feel sick after eating the berries! You lose <<print 3>> health.<br>
+    <<set $health -= 3>>
+    <<if $health <= 0>>
+      <<goto "GameOver">>
+    <<else>>
+      <<goto "ForestPathAfterSafe">>
+    <</if>>
+  <</if>>
+>><</link>><br>
+<<link "Avoid the berries and move on">><<goto "ForestPathAfterSafe">><</link>>
+
+
+
+:: Start {"position":"975,100","size":"100,100"}
+Start
+Welcome to the Adventure!<br>
+Enter your name:<br>
+<<textbox "$name" 20>>
+<br><br>
+<<link "Start Adventure">><<if $name.trim() !== "">><<goto "Intro">><<else>>Please enter a name before continuing.<</if>><</link>>
+
+
+
+:: StoryInit {"position":"750,150","size":"200,200"}
+StoryInit [startup]
+<<set $name = "">>
+<<set $health = 20>>
+<<set $attack = 5>>
+<<set $defense = 3>>
+<<set $potion = 1>>
+<<set $running = true>>
+
+<<goto "Start">>
+
+
+
+:: SunnyHills {"position":"1225,175","size":"100,100"}
+\:: SunnyHills
+You arrive at sunny, rolling hills dotted with wildflowers.<br>
+A small village is visible in the distance.<br>
+
+Do you:<br>
+<<link "Explore the village">><<goto "VillageExploration">><</link>><br>
+<<link "Walk toward the lake">><<goto "LakeDiscovery">><</link>><br>
+<<link "Return to the fork in the road">><<goto "ForkInRoad">><</link>>
+
+
+
+:: SunnyHillsAfterVillage {"position":"1275,1075","size":"100,100"}
+\:: SunnyHillsAfterVillage
+You decide to keep exploring the sunny hills.<br>
+
+Do you:<br>
+<<link "Visit the nearby lake">><<goto "Lake">><</link>><br>
+<<link "Head back to the fork in the road">><<goto "Intro">><</link>>
+
+
+
+:: Untitled Passage 1 {"position":"1250,1575","size":"100,100"}
+
+
+
+:: Village {"position":"1350,175","size":"100,100"}
+\:: Village
+You make new friends and enjoy a feast!<br>
+<<set $health = Math.min($health + 5, 20)>>
+Your health increases to <<print $health>>!<br>
+A merchant gives you a potion.<br>
+<<set $potion += 1>>
+You now have <<print $potion>> potion(s).<br>
+
+<<link "Continue your journey">><<goto "SunnyHillsAfterVillage">><</link>>
+
+
+
+:: VillageExploration {"position":"1475,1275","size":"100,100"}
+\:: VillageExploration
+The villagers welcome you warmly.<br>
+You enjoy a hearty feast and rest.<br>
+<<set $health = Math.min(20, $health + 5)>>
+Your health is now <<print $health>>.<br>
+A merchant gifts you a potion.<br>
+<<set $potion += 1>>
+Potions: <<print $potion>><br><br>
+
+<<link "Thank the villagers and continue your journey">><<goto "ForkInRoad">><</link>>
+
