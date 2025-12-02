@@ -194,7 +194,6 @@ void exercise3_clueInventory() {
     }
     cout << "======================" << endl << endl;
 
-    // TODO: Get search term from user
     string searchTerm;
     cout << "Enter a CLUE to search for: ";
     cin.ignore(); // Clear the input buffer from previous cin >> choice;
