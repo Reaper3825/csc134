@@ -81,23 +81,43 @@ void enterRoom();
 void displayRoomInfo(const Room& room);
 void moveToRoom(int& currentRoom, Direction dir);
 Direction parseDirection(const Vec2& from, const Vec2& to);
+vector<Room> rooms;
 
 
-void initializeGrid(Vec2 grid[10][10]) {
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 10; j++) {
-            grid[i][j] = {i, j};
-        }
-    }
-    cout << "Grid initialized." << endl;
+
+
+// or perform other setup as your program needs.
+void initializeRooms() {
+    cout << "Rooms initialized (stub)." << endl;
+}
+
+void initializeRoom() {
+
+cout << "Rooms initialized" << endl;
+
 }
 
 
 
 
+
+void initializeGrid() {
+    for (int i = 0; i < 10; ++i) {
+        for (int j = 0; j < 10; ++j) {
+            grid[i][j] = {i, j};
+        }
+    }
+    cout << "Grid initialized!\n";
+    initializeRooms(); // make sure this is defined (see next)
+}
+
+// Minimal implementation to satisfy linker. Expand to populate `rooms`
+
+
+
 int main() {
     // Room names array
-    initializeGrid(grid);
+    initializeGrid();
     string roomNames[NUM_ROOMS] = {
         "Entrance Hall",
         "Library",
